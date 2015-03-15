@@ -23,17 +23,20 @@ siteWatcher:
      -  /var/katalog/nginx:/etc/nginx/sites-enabled
      -  /var/log/nginx:/var/log/nginx
 builder:
-    build: github.com/jonaseck2/laughing-batman.git
+    build: github.com/Softhouse/laughing-batman.git
     links:
      -  mongodb
-     env_file: github_secret.env
+    env_file: github_secret.env
     environment: 
      -  KATALOG_VHOSTS=default/api
+     -  MONGO_HOST=172.17.42.1
 api:
-    build: github.com/jonaseck2/flaming-computing-machine.git
+    build: github.com/Softhouse/flaming-computing-machine.git
     links:
      -  mongodb
     volumes: 
      -  /var/run/docker.sock:/var/run/docker.sock
      -  /usr/bin/docker:/usr/bin/docker
     env_file: github_secret.env
+    environment:
+     -  MONGO_HOST=172.17.42.1
