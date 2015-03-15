@@ -1,0 +1,39 @@
+mongodb:
+    image: dockerfile/mongodb
+    expose: 
+     -  27017:27017
+    volumes:
+     -  /var/mongo/db:/data/db
+katalog:
+    image: joakimbeng/katalog
+    expose:
+     -  5005:5005
+    privileged: true
+    volumes: 
+     -  /var/run/docker.sock:/var/run/docker.sock
+     -  /var/katalog/tpl:/app/tpl
+     -  /var/katalog/data:/app/data
+     -  /var/katalog/nginx:/app/nginx
+siteWatcher:
+    image: joakimbeng/nginx-site-watcher
+    ports:
+     -  80:80
+    volumes:
+     -  /etc/localtime:/etc/localtime:ro
+     -  /var/katalog/nginx:/etc/nginx/sites-enabled
+     -  /var/log/nginx:/var/log/nginx
+builder:
+    build: github.com/jonaseck2/laughing-batman.git
+    links:
+     -  mongodb
+     env_file: github_secret.env
+    environment: 
+     -  KATALOG_VHOSTS=default/api
+api:
+    build: github.com/jonaseck2/flaming-computing-machine.git
+    links:
+     -  mongodb
+    volumes: 
+     -  /var/run/docker.sock:/var/run/docker.sock
+     -  /usr/bin/docker:/usr/bin/docker
+    env_file: github_secret.env
