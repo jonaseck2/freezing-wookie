@@ -11,9 +11,9 @@ katalog:
     privileged: true
     volumes: 
      -  /var/run/docker.sock:/var/run/docker.sock
-     -  /var/katalog/tpl:/app/tpl
      -  /var/katalog/data:/app/data
      -  /var/katalog/nginx:/app/nginx
+#     -  /var/katalog/tpl:/app/tpl
 siteWatcher:
     image: joakimbeng/nginx-site-watcher
     ports:
