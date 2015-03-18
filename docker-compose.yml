@@ -29,7 +29,7 @@ builder:
     env_file: github_secret.env
     environment: 
      -  KATALOG_VHOSTS=default/api
-     -  MONGO_HOST=172.17.42.1
+     -  MONGO_HOST=mongodb
 api:
     build: github.com/Softhouse/flaming-computing-machine.git
     links:
@@ -39,11 +39,22 @@ api:
      -  /usr/bin/docker:/usr/bin/docker
     env_file: github_secret.env
     environment:
-     -  MONGO_HOST=172.17.42.1
-oauth:
+     -  MONGO_HOST=mongodb
+googleauth:
     image: a5huynh/google-auth-proxy
-    expose: 4180
+    expose: 
+     -  4180
     env_file: google_auth_proxy.env
     links:
      -  siteWatcher
 #    command: --upstream=http://0.0.0.0:8080/ --http-address=0.0.0.0:4180
+proxy:
+  image: dockerfile/nginx
+  ports:
+    - 80:80
+  links:
+    - googleauth
+  volumes:
+    - ./configs/nginx/nginx.conf:/etc/nginx.conf
+    - ./configs/nginx/sites-enabled:/etc/nginx/sites-enabled
+    - /var/log/nginx-proxy:/var/log/nginx
