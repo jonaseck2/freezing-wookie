@@ -16,8 +16,8 @@ katalog:
 #     -  /var/katalog/tpl:/app/tpl
 siteWatcher:
     image: joakimbeng/nginx-site-watcher
-    ports:
-     -  80:80
+    expose:
+     -  80:8080
     volumes:
      -  /etc/localtime:/etc/localtime:ro
      -  /var/katalog/nginx:/etc/nginx/sites-enabled
@@ -40,3 +40,10 @@ api:
     env_file: github_secret.env
     environment:
      -  MONGO_HOST=172.17.42.1
+oauth:
+    image: a5huynh/google-auth-proxy
+    expose: 4180
+    env_file: google_auth_proxy.env
+    links:
+     -  siteWatcher
+#    command: --upstream=http://0.0.0.0:8080/ --http-address=0.0.0.0:4180
