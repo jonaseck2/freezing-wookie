@@ -47,13 +47,13 @@ googleauth:
     env_file: google_auth_proxy.env
     links:
      -  siteWatcher
-    command: --upstream=http://siteWatcher --http-address=0.0.0.0:4180 --cookie-https-only=false
+    command: --upstream=http://siteWatcher --http-address=0.0.0.0:4180 --cookie-https-only=false --redirect-url="http://localhost/oauth2/callback" --google-apps-domain="softhouse.se"
 proxy:
   image: dockerfile/nginx
   ports:
     - 80:80
   links:
-    - googleauth
+    -  googleauth
   volumes:
     - ./configs/nginx/nginx.conf:/etc/nginx.conf
     - ./configs/nginx/sites-enabled:/etc/nginx/sites-enabled
