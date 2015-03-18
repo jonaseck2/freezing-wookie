@@ -14,5 +14,5 @@ server {
         proxy_read_timeout 30;
 
     	proxy_pass http://googleauth:4180;
-    }
+   }
 }
