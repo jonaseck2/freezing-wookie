@@ -4,6 +4,7 @@ mongodb:
      -  27017:27017
     volumes:
      -  /var/mongo/db:/data/db
+    restart: always
 katalog:
     image: joakimbeng/katalog
     expose:
@@ -14,6 +15,7 @@ katalog:
      -  /var/katalog/data:/app/data
      -  /var/katalog/nginx:/app/nginx
 #     -  /var/katalog/tpl:/app/tpl
+    restart: always
 sitewatcher:
     image: joakimbeng/nginx-site-watcher
     expose:
@@ -22,6 +24,7 @@ sitewatcher:
      -  /etc/localtime:/etc/localtime:ro
      -  /var/katalog/nginx:/etc/nginx/sites-enabled
      -  /var/log/nginx:/var/log/nginx
+    restart: always
 builder:
     build: github.com/Softhouse/laughing-batman.git
     links:
@@ -30,6 +33,7 @@ builder:
     environment: 
      -  KATALOG_VHOSTS=default/api
      -  MONGO_HOST=mongodb
+    restart: always
 api:
     build: github.com/Softhouse/flaming-computing-machine.git
     links:
@@ -40,6 +44,7 @@ api:
     env_file: github_secret.env
     environment:
      -  MONGO_HOST=mongodb
+    restart: always
 googleauth:
     image: a5huynh/google-auth-proxy
     expose: 
@@ -48,6 +53,7 @@ googleauth:
     links:
      -  sitewatcher
     command: --upstream=http://siteWatcher --http-address=0.0.0.0:4180 --cookie-https-only=false --redirect-url="http://localhost/oauth2/callback" --google-apps-domain="softhouse.se"
+    restart: always
 proxy:
   image: dockerfile/nginx
   ports:
