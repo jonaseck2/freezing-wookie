@@ -14,7 +14,7 @@ katalog:
      -  /var/katalog/data:/app/data
      -  /var/katalog/nginx:/app/nginx
 #     -  /var/katalog/tpl:/app/tpl
-siteWatcher:
+sitewatcher:
     image: joakimbeng/nginx-site-watcher
     expose:
      -  80
@@ -46,7 +46,7 @@ googleauth:
      -  4180
     env_file: google_auth_proxy.env
     links:
-     -  siteWatcher
+     -  sitewatcher
     command: --upstream=http://siteWatcher --http-address=0.0.0.0:4180 --cookie-https-only=false --redirect-url="http://localhost/oauth2/callback" --google-apps-domain="softhouse.se"
 proxy:
   image: dockerfile/nginx
