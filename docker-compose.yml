@@ -1,14 +1,14 @@
 mongodb:
     image: dockerfile/mongodb
     expose: 
-     -  27017:27017
+     -  27017
     volumes:
      -  /var/mongo/db:/data/db
     restart: always
 katalog:
     image: joakimbeng/katalog
     expose:
-     -  5005:5005
+     -  5005
     privileged: true
     volumes: 
      -  /var/run/docker.sock:/var/run/docker.sock
@@ -23,9 +23,8 @@ sitewatcher:
     volumes:
      -  /etc/localtime:/etc/localtime:ro
      -  /var/katalog/nginx:/etc/nginx/sites-enabled
-     -  /var/log/nginx:/var/log/nginx
     restart: always
-builder:
+api:
     build: github.com/Softhouse/laughing-batman.git
     links:
      -  mongodb
@@ -34,7 +33,7 @@ builder:
      -  KATALOG_VHOSTS=default/api
      -  MONGO_HOST=mongodb
     restart: always
-api:
+builder:
     build: github.com/Softhouse/flaming-computing-machine.git
     links:
      -  mongodb
@@ -52,15 +51,15 @@ googleauth:
     env_file: google_auth_proxy.env
     links:
      -  sitewatcher
-    command: --upstream=http://siteWatcher --http-address=0.0.0.0:4180 --cookie-https-only=false --redirect-url="http://localhost/oauth2/callback" --google-apps-domain="softhouse.se"
+    command: --upstream=http://sitewatcher --http-address=0.0.0.0:4180 --cookie-https-only=false --redirect-url="http://localhost/oauth2/callback" --google-apps-domain="softhouse.se"
     restart: always
 proxy:
-  image: dockerfile/nginx
-  ports:
-    - 80:80
-  links:
-    -  googleauth
-  volumes:
-    - proxy/nginx/nginx.conf:/etc/nginx.conf
-    - proxy/nginx/sites-enabled:/etc/nginx/sites-enabled
-    - /var/log/nginx-proxy:/var/log/nginx
+    image: dockerfile/nginx
+    ports:
+     - 80:80
+    links:
+     -  googleauth
+    volumes:
+     - proxy/nginx/nginx.conf:/etc/nginx.conf
+     - proxy/nginx/sites-enabled:/etc/nginx/sites-enabled
+    restart: always
