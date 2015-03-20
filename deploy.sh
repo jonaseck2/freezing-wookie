@@ -35,10 +35,11 @@ if [ ! -x /usr/bin/docker ]; then
 	sudo apt-get -qqy install lxc-docker
 	sudo usermod -a -G docker `id -g -n`  # emable running docker without sudo
 fi
-	
-if [ ! -f /etc/init/mongo.conf ]; then
+
+#mongodb
+if [ ! -f /etc/init/docker-mongodb.conf ]; then
 	sudo docker pull dockerfile/mongodb
-	sudo mkdir -p /var/log/mongo
+	sudo mkdir -p /var/log/docker-mongodb
 	sudo sh -c "echo '
 description \"A job for running a MongoDB docker container\"
 author \"Joakim Carlstein\"
@@ -46,14 +47,19 @@ author \"Joakim Carlstein\"
 start on filesystem on runlevel [2345]
 stop on shutdown
 
-exec docker run --rm -p 27017:27017 -v /var/mongo/db:/data/db dockerfile/mongodb >> /var/log/mongo/mongo.log
-respawn' > /etc/init/mongo.conf"
+exec docker run --rm --name mongodb \
+	--expose 27017:27017 \
+	-v /var/mongodb/db:/data/db \
+	dockerfile/mongodb \
+	>> /var/log/docker-mongodb/docker-mongodb.log
+respawn' > /etc/init/docker-mongodb.conf"
 
-	sudo init-checkconf /etc/init/mongo.conf
+	sudo init-checkconf /etc/init/docker-mongodb.conf
 fi
-sudo service mongo start
+sudo service docker-mongodb start
 
-if [ ! -f /etc/init/katalog.conf ]; then
+#katalog
+if [ ! -f /etc/init/docker-katalog.conf ]; then
 	sudo docker pull joakimbeng/katalog
 
 	#workaround to copy the nginx.mustache file from the container that gets overwritten when sharing the tpl volume
@@ -64,8 +70,7 @@ if [ ! -f /etc/init/katalog.conf ]; then
 	docker kill `cat tmp.cid`
 	rm -f tmp.cid
 
-	sudo mkdir -p /var/log/katalog/
-
+	sudo mkdir -p /var/log/docker-katalog/
 	sudo sh -c "echo '
 description \"A job for running a Katalog docker container\"
 author \"Joakim Carlstein\"
@@ -73,17 +78,26 @@ author \"Joakim Carlstein\"
 start on filesystem on runlevel [2345]
 stop on shutdown
 
-exec docker run --rm --privileged -p 5005:5005 -v /var/run/docker.sock:/var/run/docker.sock -v /var/katalog/tpl:/app/tpl -v /var/katalog/data:/app/data -v /var/katalog/nginx:/app/nginx joakimbeng/katalog >> /var/log/katalog/katalog.log
-respawn' > /etc/init/katalog.conf"
+exec docker run --rm \
+	--privileged \
+	--expose=5005 \
+	--name=katalog \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/katalog/tpl:/app/tpl \
+	-v /var/katalog/data:/app/data \
+	-v /var/katalog/nginx:/app/nginx \ 
+	joakimbeng/katalog \
+	>> /var/log/docker-katalog/docker-katalog.log
+respawn' > /etc/init/docker-katalog.conf"
 
-	sudo init-checkconf /etc/init/katalog.conf
+	sudo init-checkconf /etc/init/docker-katalog.conf
 fi
-sudo service katalog start
+sudo service docker-katalog start
 
-if [ ! -f /etc/init/nginx-proxy.conf ]; then
+#sitewatcher
+if [ ! -f /etc/init/docker-sitewatcher.conf ]; then
 	sudo docker pull joakimbeng/nginx-site-watcher
-	sudo mkdir -p /var/log/nginx
-	sudo touch /var/log/nginx/nginx.log
+	sudo mkdir -p /var/log/docker-sitewatcher
 	sudo sh -c "echo '
 description \"A job for running a Nginx-site-watcher docker container\"
 author \"Joakim Carlstein\"
@@ -91,26 +105,119 @@ author \"Joakim Carlstein\"
 start on filesystem on runlevel [2345]
 stop on shutdown
 
-exec docker run --rm -p 80:80 -v /etc/localtime:/etc/localtime:ro -v /var/katalog/nginx:/etc/nginx/sites-enabled -v /var/log/nginx:/var/log/nginx joakimbeng/nginx-site-watcher >> /var/log/nginx/nginx.log
-respawn' > /etc/init/nginx-proxy.conf"
-#remove 80:80 when adding oauth
+exec docker run --rm \
+	--expose 80 \
+	--name sitewatcher \
+	-v /etc/localtime:/etc/localtime:ro \
+	-v /var/katalog/nginx:/etc/nginx/sites-enabled \
+	-v /var/log/docker-sitewatcher:/var/log/nginx \
+	joakimbeng/nginx-site-watcher \
+	>> /var/log/docker-sitewatcher/docker-sitewatcher.log
+respawn' > /etc/init/docker-sitewatcher.conf"
 
-	sudo init-checkconf /etc/init/nginx-proxy.conf
+	sudo init-checkconf /etc/init/docker-sitewatcher.conf
 fi
-sudo service nginx-proxy start
+sudo service docker-sitewatcher start
 
 #api
-if [ `docker images | grep laughing-batman | wc -l` -le 0 ]; then
-	docker build -t softhouse/laughing-batman https://github.com/Softhouse/laughing-batman.git
+if [ ! -f /etc/init/docker-api.conf ]; then
+	if [ `docker images | grep laughing-batman | wc -l` -le 0 ]; then
+		docker build -t softhouse/laughing-batman https://github.com/Softhouse/laughing-batman.git
+	fi
+	sudo sh -c "echo '
+description \"A job for running a laughing-batman docker container\"
+author \"Jonas Eckerström\"
+
+start on filesystem on runlevel [2345]
+stop on shutdown
+
+exec docker run --rm --name api \
+	--env-file=github_secret.env \
+	-e KATALOG_VHOSTS=default/api \
+	-e MONGO_HOST=mongodb \
+	--link=mongodb \
+	softhouse/laughing-batman \
+	>> /var/log/docker-api/docker-api.log
+respawn' > /etc/init/-docker-api.conf"
+
+	sudo init-checkconf /etc/init/docker-api.conf
 fi
-if [ `docker ps | grep laughing-batman | wc -l` -le 0  ]; then
-	docker run -d --name softhouse_laughing-batman_1 -e GITHUB_SECRET=$GITHUB_SECRET -e KATALOG_VHOSTS=default/api -e MONGO_HOST=172.17.42.1 softhouse/laughing-batman
-fi
+sudo service docker-api start
 
 #builder 
-if [ `docker images | grep flaming-computing-machine | wc -l` -le 0 ];then  
-	docker build -t softhouse/flaming-computing-machine https://github.com/Softhouse/flaming-computing-machine.git
+if [ ! -f /etc/init/docker-builder.conf ]; then
+	if [ `docker images | grep flaming-computing-machine | wc -l` -le 0 ];then  
+		docker build -t softhouse/flaming-computing-machine https://github.com/Softhouse/flaming-computing-machine.git
+	fi
+	sudo sh -c "echo '
+description \"A job for running a flaming-computing-machine docker container\"
+author \"Jonas Eckerström\"
+
+start on filesystem on runlevel [2345]
+stop on shutdown
+
+exec docker run --rm --name builder \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /usr/bin/docker:/usr/bin/docker \
+	--env-file=github_secret.env \
+	-e MONGO_HOST=mongodb \
+	--link=mongodb \
+	softhouse/flaming-computing-machine \
+	>> /var/log/docker-builder/docker-builder.log
+respawn' > /etc/init/docker-builder.conf"
+
+	sudo init-checkconf /etc/init/docker-builder.conf
 fi
-if [ `docker ps | grep flaming-computing-machine | wc -l` -le 0  ]; then
-	docker run -d --name softhouse_flaming-computing-machine -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -e GITHUB_SECRET=$GITHUB_SECRET -e MONGO_HOST=172.17.42.1 softhouse/flaming-computing-machine
+sudo service docker-builder start
+
+#googleauth
+if [ ! -f /etc/init/docker-googleauth.conf ]; then
+	sudo docker pull a5huynh/google-auth-proxy
+	sudo sh -c "echo '
+description \"A job for running a google-auth-proxy docker container\"
+author \"Jonas Eckerström\"
+
+start on filesystem on runlevel [2345]
+stop on shutdown
+
+exec docker run --rm --name googleauth \
+	--expose 4180
+	--env-file=github_secret.env \
+	--link=sitewatcher \
+	-v /var/log/docker-googleauth:/var/log/docker-googleauth
+	a5huynh/google-auth-proxy \
+		--upstream=http://sitewatcher \
+		--http-address=0.0.0.0:4180 \
+		--cookie-https-only=false 
+		--redirect-url=\"http://localhost/oauth2/callback\" \
+		--google-apps-domain=\"softhouse.se\" \
+	>> /var/log/docker-googleauth/docker-googleauth.log
+respawn' > /etc/init/docker-googleauth.conf"
+
+	sudo init-checkconf /etc/init/docker-googleauth.conf
 fi
+sudo service docker-googleauth start
+
+#proxy
+if [ ! -f /etc/init/docker-proxy.conf ]; then
+	sudo docker pull a5huynh/google-auth-proxy
+	sudo sh -c "echo '
+description \"A job for running a google-auth-proxy docker container\"
+author \"Jonas Eckerström\"
+
+start on filesystem on runlevel [2345]
+stop on shutdown
+
+exec docker run --rm --name proxy
+	--env-file=google_auth_proxy.env \
+	-v proxy/nginx/sites-enabled:/etc/nginx/sites-enabled \
+	-v proxy/nginx/nginx.conf:/etc/nginx.conf \
+	-v /var/log/docker-proxy:/var/log/docker-proxy \
+	-p 80:80 \
+	dockerfile/nginx \
+	>> /var/log/docker-proxy/docker-proxy.log
+respawn' > /etc/init/docker-proxy.conf"
+
+	sudo init-checkconf /etc/init/docker-proxy.conf
+fi
+sudo service docker-proxy start
