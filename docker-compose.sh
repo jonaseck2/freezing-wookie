@@ -13,6 +13,9 @@ fi
 
 #Installing Compose
 if [ ! -x /usr/local/bin/docker-compose ]; then
+	if [ ! -x /usr/bin/curl ]; then
+		sudo apt-get install -qqy curl
+	fi
 	sudo bash -c "curl -sL https://raw.githubusercontent.com/docker/compose/1.1.0/contrib/completion/bash/docker-compose > /etc/bash_completion.d/docker-compose"
 	sudo bash -c "curl -sL https://github.com/docker/compose/releases/download/1.1.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose"
 	sudo chmod +x /usr/local/bin/docker-compose
