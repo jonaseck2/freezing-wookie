@@ -11,6 +11,6 @@ Vagrant.configure(2) do |config|
     config.vm.provision :shell, inline: 'cd /vagrant && ./docker-compose.sh'
     config.vm.provision :shell, inline: 'cd /vagrant && docker-compose up -d'
   else
- 	config.vm.provision :shell, path: 'deploy.sh', privileged: false
+    config.vm.provision :shell, inline: 'cd /vagrant && deploy.sh', privileged: false
   end
 end

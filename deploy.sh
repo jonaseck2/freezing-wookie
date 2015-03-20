@@ -17,7 +17,8 @@ if [ ! -f ./google_auth_proxy.env ]; then
 	echo "creating default google_auth_proxy.env file"
 	echo "For instructions how to obtain client id and client secret, see"
 	echo "https://github.com/bitly/google_auth_proxy#oauth-configuration"
-	echo "GOOGLE_AUTH_PROXY_CLIENT_ID=default_client_id\nGOOGLE_AUTH_PROXY_CLIENT_SECRET=default_client_secret" > google_auth_proxy.env
+	echo "GOOGLE_AUTH_PROXY_CLIENT_ID=default_client_id
+GOOGLE_AUTH_PROXY_CLIENT_SECRET=default_client_secret" > google_auth_proxy.env
 fi
 source ./google_auth_proxy.env
 if [ -z $GOOGLE_AUTH_PROXY_CLIENT_ID ] || [ -z $GOOGLE_AUTH_PROXY_CLIENT_SECRET ]; then
@@ -33,8 +34,9 @@ if [ ! -x /usr/bin/docker ]; then
 	sudo sh -c "echo deb https://get.docker.com/ubuntu docker main > /etc/apt/sources.list.d/docker.list"
 	sudo apt-get update
 	sudo apt-get -qqy install lxc-docker
-	sudo usermod -a -G docker `id -g -n`  # emable running docker without sudo
+	sudo usermod -a -G docker `id -g -n`  # requires relogin so all docker commands must be sudo or sg docker "docker <subCommand> ..."
 fi
+
 
 name=${PWD##*/}
 sudo mkdir -p /var/log/$name
@@ -66,11 +68,11 @@ if [ ! -f /etc/init/$name-katalog.conf ]; then
 
 	if [ ! -d /var/katalog/tpl ] || [ -z /var/katalog/tpl/mustache.nginx ]; then
 		#workaround to copy the nginx.mustache file from the container that gets overwritten when sharing the tpl volume
-		mkdir -p /var/katalog/
+		sudo mkdir -p /var/katalog/
 		rm -f tmp.cid
-		docker run --privileged -d --cidfile tmp.cid -v /var/run/docker.sock:/var/run/docker.sock joakimbeng/katalog
+		sudo docker run --rm --privileged -d --cidfile tmp.cid -v /var/run/docker.sock:/var/run/docker.sock joakimbeng/katalog
 		sudo docker cp `cat tmp.cid`:/app/tpl/ /var/katalog/
-		docker kill `cat tmp.cid`
+		sudo docker kill `cat tmp.cid`
 		rm -f tmp.cid
 	fi
 
@@ -82,9 +84,9 @@ start on filesystem on runlevel [2345]
 stop on shutdown
 
 exec docker run --rm \
+--name=katalog \
 --privileged \
 --expose=5005 \
---name=katalog \
 -v /var/run/docker.sock:/var/run/docker.sock \
 -v /var/katalog/tpl:/app/tpl \
 -v /var/katalog/data:/app/data \
@@ -108,8 +110,8 @@ start on filesystem on runlevel [2345]
 stop on shutdown
 
 exec docker run --rm \
---expose=80 \
 --name sitewatcher \
+--expose=80 \
 -v /etc/localtime:/etc/localtime:ro \
 -v /var/katalog/nginx:/etc/nginx/sites-enabled \
 -v /var/log/$name/sitewatcher:/var/log/nginx \
@@ -123,9 +125,7 @@ sudo service $name-sitewatcher start
 
 #api
 if [ ! -f /etc/init/$name-api.conf ]; then
-	if [ `docker images | grep laughing-batman | wc -l` -le 0 ]; then
-		docker build -t softhouse/laughing-batman https://github.com/Softhouse/laughing-batman.git
-	fi
+	sudo docker build -t softhouse/laughing-batman https://github.com/Softhouse/laughing-batman.git
 	sudo sh -c "echo '
 description \"A job for running a laughing-batman docker container\"
 author \"Jonas Eckerström\"
@@ -133,11 +133,12 @@ author \"Jonas Eckerström\"
 start on filesystem on runlevel [2345]
 stop on shutdown
 
-exec docker run --rm --name api \
+exec docker run --rm \
+--name api \
 --env-file=github_secret.env \
 -e KATALOG_VHOSTS=default/api \
 -e MONGO_HOST=mongodb \
---link=mongodb \
+--link=mongodb:mongodb \
 softhouse/laughing-batman \
 >> /var/log/$name/api.log
 respawn' > /etc/init/$name-api.conf"
@@ -148,9 +149,7 @@ sudo service $name-api start
 
 #builder 
 if [ ! -f /etc/init/$name-builder.conf ]; then
-	if [ `docker images | grep flaming-computing-machine | wc -l` -le 0 ];then  
-		docker build -t softhouse/flaming-computing-machine https://github.com/Softhouse/flaming-computing-machine.git
-	fi
+	sudo docker build -t softhouse/flaming-computing-machine https://github.com/Softhouse/flaming-computing-machine.git
 	sudo sh -c "echo '
 description \"A job for running a flaming-computing-machine docker container\"
 author \"Jonas Eckerström\"
@@ -163,7 +162,7 @@ exec docker run --rm --name builder \
 -v /usr/bin/docker:/usr/bin/docker \
 --env-file=github_secret.env \
 -e MONGO_HOST=mongodb \
---link=mongodb \
+--link=mongodb:mongodb \
 softhouse/flaming-computing-machine \
 >> /var/log/$name/builder.log
 respawn' > /etc/init/$name-builder.conf"
@@ -185,7 +184,7 @@ stop on shutdown
 exec docker run --rm --name googleauth \
 --expose=4180 \
 --env-file=github_secret.env \
---link=sitewatcher \
+--link=sitewatcher:sitewatcher \
 a5huynh/google-auth-proxy \
 --upstream=http://sitewatcher \
 --http-address=0.0.0.0:4180 \
@@ -211,8 +210,8 @@ stop on shutdown
 
 exec docker run --rm --name proxy \
 --env-file=google_auth_proxy.env \
--v proxy/nginx/sites-enabled:/etc/nginx/sites-enabled \
--v proxy/nginx/nginx.conf:/etc/nginx.conf \
+-v ${pwd}/proxy/nginx/sites-enabled:/etc/nginx/sites-enabled \
+-v ${pwd}/proxy/nginx/nginx.conf:/etc/nginx.conf \
 -v /var/log/$name/proxy:/var/log/nginx \
 -p 80:80 \
 dockerfile/nginx \
