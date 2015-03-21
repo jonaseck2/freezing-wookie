@@ -8,7 +8,7 @@ if [ ! -x /usr/bin/docker ]; then
 	sudo sh -c "echo deb https://get.docker.com/ubuntu docker main > /etc/apt/sources.list.d/docker.list"
 	sudo apt-get update
 	sudo apt-get -qqy install lxc-docker
-	sudo usermod -a -G docker `id -g -n`  # för att slippa köra docker med sudo
+	sudo usermod -a -G docker `id -g -n` # requires relogin
 fi
 
 #Installing Compose
