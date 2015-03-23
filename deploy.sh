@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+#deploys the docker-compose.yml as an upstart service named freezing-wookie
+#logging is done to /var/log/upstart/freezing-wookie.log
+
+#name=${PWD##*/}
+name="freezing-wookie"
+
 #check prerequisites
 if [ ! -f ./github_secret.env ]; then
 	echo "creating default github_secret.env file"
@@ -30,12 +36,11 @@ if [ -z $GOOGLE_AUTH_PROXY_CLIENT_ID ] || [ -z $GOOGLE_AUTH_PROXY_CLIENT_SECRET 
 	exit 1
 fi
 
-#name=${PWD##*/}
-name="freezing-wookie"
 sudo mkdir -p /var/${name}
 cp -r proxy docker-compose.yml *.env /var/${name}/
 
-# TODO the mustache file gets overwritten if the volume is mounted. Comment in the lines below and the yml to enable the volume
+# the mustache file gets overwritten if the volume is mounted. Comment in the lines below and the yml to enable the volume
+# TODO remove this when the docker image is fixed
 # if [ ! -d /var/katalog/tpl ] || [ -z /var/katalog/tpl/mustache.nginx ]; then
 # 	#workaround to copy the nginx.mustache file from the container that gets overwritten when mounting the tpl volume
 # 	sudo mkdir -p /var/katalog/

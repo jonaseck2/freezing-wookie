@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#installs docker and docker-compose
+
 export DOCKER_HOST=tcp://localhost:4243
 
 #installing docker

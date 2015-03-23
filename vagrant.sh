@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+
+#Installing vagrant on ubuntu was a pita so it was added for convenience
+#Not required to run the project, just very, very convenient since messing up upstart services bricks ubuntu
+
 sudo apt-get -qqy purge virtualbox
 
 curl -Os https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.2_x86_64.deb
