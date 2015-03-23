@@ -15,4 +15,18 @@ server {
 
     	proxy_pass http://googleauth:4180;
    }
+
+    location /api/_hook/ {
+        proxy_pass http://sitewatcher;
+        proxy_set_header Host $host;
+        proxy_pass_request_headers on;
+        proxy_pass_request_body on;
+        log_format postdata $request_body;
+        access_log /var/log/nginx/postdata.log postdata;
+
+        limit_except POST {
+            allow 192.30.252.129; # github
+            deny all;
+        }
+   }
 }

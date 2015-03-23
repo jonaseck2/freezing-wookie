@@ -59,6 +59,7 @@ proxy:
      - 80:80
     links:
      -  googleauth
+     -  sitewatcher
     volumes:
      - proxy/nginx/nginx.conf:/etc/nginx.conf
      - proxy/nginx/sites-enabled:/etc/nginx/sites-enabled
