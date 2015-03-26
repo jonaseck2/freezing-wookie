@@ -62,6 +62,10 @@ author \"Jonas Eckerström\"
 start on filesystem and started docker on runlevel [2345]
 stop on shutdown
 
+post-stop script
+	cd /var/${name} && docker-compose stop
+end script
+
 exec sh -c \"cd /var/${name} && docker-compose up\"
 respawn' > /etc/init/${name}.conf"
 
