@@ -1,3 +1,20 @@
+
+upstream googleauth
+{
+    server googleauth:4180;
+}
+
+upstream sitewatcher
+{
+    server sitewatcher;
+}
+
+## define default backend and backend for special remote addresses
+map $remote_addr $backend {
+  default googleauth;
+  $server_addr sitewatcher;
+}
+
 server {
     listen 80;
 
@@ -13,7 +30,7 @@ server {
         proxy_send_timeout 30;
         proxy_read_timeout 30;
 
-    	proxy_pass http://googleauth:4180;
+        proxy_pass http://$backend;
    }
 
     location /api/_hook/ {
