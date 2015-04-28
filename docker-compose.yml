@@ -1,5 +1,5 @@
 mongodb:
-    image: dockerfile/mongodb
+    image: library/mongo
     expose: 
      -  27017
     volumes:
@@ -54,7 +54,7 @@ googleauth:
     command: --upstream=http://sitewatcher --http-address=0.0.0.0:4180 --cookie-https-only=false --redirect-url="http://xyz.softhouse.se/oauth2/callback" --google-apps-domain="softhouse.se"
     restart: always
 proxy:
-    image: dockerfile/nginx
+    image: library/nginx
     ports:
      - 80:80
     links:
