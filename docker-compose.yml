@@ -51,7 +51,7 @@ googleauth:
     env_file: google_auth_proxy.env
     links:
      -  sitewatcher
-    command: --upstream=http://sitewatcher --http-address=0.0.0.0:4180 --cookie-https-only=false --redirect-url="http://localhost/oauth2/callback" --google-apps-domain="softhouse.se"
+    command: --upstream=http://sitewatcher --http-address=0.0.0.0:4180 --cookie-https-only=false --redirect-url="http://xyz.softhouse.se/oauth2/callback" --google-apps-domain="softhouse.se"
     restart: always
 proxy:
     image: dockerfile/nginx
