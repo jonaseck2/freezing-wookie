@@ -18,7 +18,7 @@ katalog:
     restart: always
 sitewatcher:
     #image: joakimbeng/nginx-site-watcher
-    build: nginx-site-watcher
+    build: github.com/jonaseck2/nginx-site-watcher.git
     expose:
      - 80
     volumes:
