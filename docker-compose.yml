@@ -21,7 +21,7 @@ sitewatcher:
     expose:
      -  80
     volumes:
-     -  /etc/localtime:/etc/localtime:ro
+#     -  /etc/localtime:/etc/localtime:ro
      -  /var/katalog/nginx:/etc/nginx/sites-enabled
     restart: always
 api:
