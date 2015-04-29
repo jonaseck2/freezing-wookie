@@ -1,56 +1,55 @@
 mongodb:
     image: library/mongo
     expose: 
-     -  27017
+     - 27017
     volumes:
-     -  /var/mongo/db:/data/db
+     - /var/mongo/db:/data/db
     restart: always
 katalog:
     image: joakimbeng/katalog
     expose:
-     -  5005
+     - 5005
     privileged: true
     volumes: 
-     -  /var/run/docker.sock:/var/run/docker.sock
-     -  /var/katalog/data:/app/data
-     -  /var/katalog/nginx:/app/nginx
-#     -  /var/katalog/tpl:/app/tpl
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /var/katalog/data:/app/data
+     - /var/katalog/nginx:/app/nginx
+#     - /var/katalog/tpl:/app/tpl
     restart: always
 sitewatcher:
-    image: joakimbeng/nginx-site-watcher
+    #image: joakimbeng/nginx-site-watcher
+    build: nginx-site-watcher
     expose:
-     -  80
+     - 80
     volumes:
-#     -  /etc/localtime:/etc/localtime:ro
-     -  /var/katalog/nginx:/etc/nginx/sites-enabled
+     - /var/katalog/nginx:/etc/nginx/sites-enabled
     restart: always
 api:
     build: github.com/Softhouse/laughing-batman.git
     links:
-     -  mongodb
+     - mongodb
     env_file: github_secret.env
     environment: 
-     -  KATALOG_VHOSTS=default/api
-     -  MONGO_HOST=mongodb
-    restart: always
+     - KATALOG_VHOSTS=default/api
+     - MONGO_HOST=mongodb
 builder:
     build: github.com/Softhouse/flaming-computing-machine.git
     links:
-     -  mongodb
+     - mongodb
     volumes: 
-     -  /var/run/docker.sock:/var/run/docker.sock
-     -  /usr/bin/docker:/usr/bin/docker
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /usr/bin/docker:/usr/bin/docker
     env_file: github_secret.env
     environment:
-     -  MONGO_HOST=mongodb
+     - MONGO_HOST=mongodb
     restart: always
 googleauth:
     image: a5huynh/google-auth-proxy
     expose: 
-     -  4180
+     - 4180
     env_file: google_auth_proxy.env
     links:
-     -  sitewatcher
+     - sitewatcher
     command: --upstream=http://sitewatcher --http-address=0.0.0.0:4180 --cookie-https-only=false --redirect-url="http://xyz.softhouse.se/oauth2/callback" --google-apps-domain="softhouse.se"
     restart: always
 proxy:
@@ -58,9 +57,9 @@ proxy:
     ports:
      - 80:80
     links:
-     -  googleauth
-     -  sitewatcher
+     - googleauth
+     - sitewatcher
     volumes:
-     - proxy/nginx/nginx.conf:/etc/nginx.conf
+     - proxy/nginx/nginx.conf:/etc/nginx/nginx.conf
      - proxy/nginx/sites-enabled:/etc/nginx/sites-enabled
     restart: always
