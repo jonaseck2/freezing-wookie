@@ -1,5 +1,5 @@
 mongodb:
-    image: library/mongo
+    image: mongo
     expose: 
      - 27017
     volumes:
@@ -9,7 +9,6 @@ katalog:
     image: joakimbeng/katalog
     expose:
      - 5005
-    privileged: true
     volumes: 
      - /var/run/docker.sock:/var/run/docker.sock
      - /var/katalog/data:/app/data
@@ -22,7 +21,7 @@ sitewatcher:
     expose:
      - 80
     volumes:
-     - /var/katalog/nginx:/etc/nginx/sites-enabled
+     - /var/katalog/nginx:/etc/nginx/sites-enabled:ro
     restart: always
 api:
     build: github.com/Softhouse/laughing-batman.git
@@ -53,13 +52,13 @@ googleauth:
     command: --upstream=http://sitewatcher --http-address=0.0.0.0:4180 --cookie-https-only=false --redirect-url="http://xyz.softhouse.se/oauth2/callback" --google-apps-domain="softhouse.se"
     restart: always
 proxy:
-    image: library/nginx
+    image: nginx
     ports:
      - 80:80
     links:
      - googleauth
      - sitewatcher
     volumes:
-     - proxy/nginx/nginx.conf:/etc/nginx/nginx.conf
-     - proxy/nginx/sites-enabled:/etc/nginx/sites-enabled
+     - proxy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+     - proxy/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
     restart: always
