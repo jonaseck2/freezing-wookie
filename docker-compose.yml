@@ -9,6 +9,7 @@ katalog:
     image: joakimbeng/katalog
     expose:
      - 5005
+    privileged: true
     volumes: 
      - /var/run/docker.sock:/var/run/docker.sock
      - /var/katalog/data:/app/data
@@ -16,12 +17,11 @@ katalog:
 #     - /var/katalog/tpl:/app/tpl
     restart: always
 sitewatcher:
-    #image: joakimbeng/nginx-site-watcher
-    build: github.com/jonaseck2/nginx-site-watcher.git
+    image: joakimbeng/nginx-site-watcher
     expose:
      - 80
     volumes:
-     - /var/katalog/nginx:/etc/nginx/sites-enabled:ro
+     - /var/katalog/nginx:/etc/nginx/sites-enabled
     restart: always
 api:
     build: github.com/Softhouse/laughing-batman.git
@@ -59,6 +59,6 @@ proxy:
      - googleauth
      - sitewatcher
     volumes:
-     - proxy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-     - proxy/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
+     - proxy/nginx/nginx.conf:/etc/nginx/nginx.conf
+     - proxy/nginx/sites-enabled:/etc/nginx/sites-enabled
     restart: always
